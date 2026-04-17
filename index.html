@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NullPhasor — Hack. Defend. Dominate.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #00ff41;
+      --green-dim: #00cc33;
+      --green-ghost: rgba(0, 255, 65, 0.07);
+      --green-glow: rgba(0, 255, 65, 0.25);
+      --black: #000000;
+      --dark: #050505;
+      --panel: #0a0a0a;
+      --border: rgba(0, 255, 65, 0.18);
+      --text-muted: rgba(0, 255, 65, 0.45);
+      --font-display: 'Bebas Neue', cursive;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--green);
+      font-family: var(--font-mono);
+      overflow-x: hidden;
+      cursor: crosshair;
+    }
+
+    /* ─── SCANLINE OVERLAY ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.15) 2px,
+        rgba(0,0,0,0.15) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+      animation: scanroll 8s linear infinite;
+    }
+
+    @keyframes scanroll {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 100px; }
+    }
+
+    /* ─── NOISE TEXTURE ─── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9998;
+      opacity: 0.4;
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--black); }
+    ::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 3rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      letter-spacing: 0.12em;
+      color: var(--green);
+      text-shadow: 0 0 20px var(--green-glow);
+      text-decoration: none;
+    }
+
+    .nav-logo span { color: var(--text-muted); }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      transition: color 0.2s, text-shadow 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--green);
+      text-shadow: 0 0 12px var(--green-glow);
+    }
+
+    .nav-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ─── HERO ─── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8rem 3rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+      animation: gridfade 6s ease-in-out infinite alternate;
+    }
+
+    @keyframes gridfade {
+      from { opacity: 0.4; }
+      to { opacity: 0.8; }
+    }
+
+    .hero-eyebrow {
+      font-size: 0.65rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      animation: fadein 0.8s ease forwards;
+      opacity: 0;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(5rem, 14vw, 13rem);
+      line-height: 0.9;
+      letter-spacing: 0.04em;
+      color: var(--green);
+      text-shadow:
+        0 0 60px rgba(0,255,65,0.3),
+        0 0 120px rgba(0,255,65,0.1);
+      position: relative;
+      animation: fadein 0.8s 0.2s ease forwards;
+      opacity: 0;
+    }
+
+    .hero-title .glitch {
+      position: relative;
+      display: inline-block;
+    }
+
+    .hero-title .glitch::before,
+    .hero-title .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+    }
+
+    .hero-title .glitch::before {
+      color: #ff003c;
+      animation: glitch1 3.5s infinite;
+      clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%);
+    }
+
+    .hero-title .glitch::after {
+      color: #00d4ff;
+      animation: glitch2 3.5s infinite;
+      clip-path: polygon(0 60%, 100% 60%, 100% 75%, 0 75%);
+    }
+
+    @keyframes glitch1 {
+      0%, 90%, 100% { transform: translateX(0); opacity: 0; }
+      92% { transform: translateX(-4px); opacity: 0.8; }
+      94% { transform: translateX(4px); opacity: 0.8; }
+      96% { transform: translateX(0); opacity: 0; }
+    }
+
+    @keyframes glitch2 {
+      0%, 88%, 100% { transform: translateX(0); opacity: 0; }
+      90% { transform: translateX(4px); opacity: 0.7; }
+      93% { transform: translateX(-2px); opacity: 0.7; }
+      95% { transform: translateX(0); opacity: 0; }
+    }
+
+    .hero-sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      margin-top: 2rem;
+      max-width: 480px;
+      line-height: 1.8;
+      animation: fadein 0.8s 0.4s ease forwards;
+      opacity: 0;
+    }
+
+    .hero-cta-row {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 3rem;
+      align-items: center;
+      animation: fadein 0.8s 0.6s ease forwards;
+      opacity: 0;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.9rem 2.2rem;
+      background: var(--green);
+      color: var(--black);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border: none;
+      cursor: crosshair;
+      transition: all 0.2s;
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.15);
+      transform: translateX(-100%);
+      transition: transform 0.3s;
+    }
+
+    .btn-primary:hover::before { transform: translateX(0); }
+
+    .btn-primary:hover {
+      box-shadow: 0 0 30px var(--green-glow), 0 0 60px rgba(0,255,65,0.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.9rem 2rem;
+      background: transparent;
+      color: var(--green);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      cursor: crosshair;
+      transition: all 0.2s;
+    }
+
+        .btn-ghost:hover {
+      border-color: var(--green);
+      background: var(--green-ghost);
+      box-shadow: 0 0 20px var(--green-glow);
+    }
+
+    /* ─── TERMINAL TICKER ─── */
+    .ticker-wrap {
+      position: absolute;
+      bottom: 3rem;
+      left: 0; right: 0;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 0;
+      background: rgba(0,0,0,0.6);
+    }
+
+    .ticker {
+      display: flex;
+      white-space: nowrap;
+      animation: ticker 30s linear infinite;
+    }
+
+    .ticker span {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      padding: 0 3rem;
+    }
+
+    .ticker span.accent { color: var(--green); }
+
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── SECTION BASE ─── */
+    section {
+      padding: 6rem 3rem;
+      position: relative;
+    }
+
+    .section-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      letter-spacing: 0.06em;
+      line-height: 1;
+      color: var(--green);
+      margin-bottom: 3rem;
+    }
+
+    /* ─── DIVIDER ─── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--green-dim), transparent);
+      margin: 0;
+    }
+
+    /* ─── SIMULATION SECTION ─── */
+    #simulation {
+      background: var(--dark);
+    }
+
+    .sim-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      margin-top: 2rem;
+    }
+
+    .sim-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+      cursor: crosshair;
+      transition: border-color 0.3s, background 0.3s;
+      text-decoration: none;
+      display: block;
+    }
+
+    .sim-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--green);
+      transform: scaleY(0);
+      transform-origin: bottom;
+      transition: transform 0.3s;
+    }
+
+    .sim-card:hover {
+      border-color: var(--green);
+      background: var(--green-ghost);
+    }
+
+    .sim-card:hover::before { transform: scaleY(1); }
+
+    .sim-card-tag {
+      font-size: 0.6rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .sim-card-title {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      letter-spacing: 0.08em;
+      color: var(--green);
+      margin-bottom: 1rem;
+      text-shadow: 0 0 30px rgba(0,255,65,0.2);
+    }
+
+    .sim-card-desc {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.9;
+      letter-spacing: 0.03em;
+    }
+
+    .sim-card-arrow {
+      position: absolute;
+      bottom: 2rem; right: 2rem;
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .sim-card:hover .sim-card-arrow {
+      color: var(--green);
+      transform: translate(4px, -4px);
+    }
+
+    .sim-featured {
+      grid-column: span 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .sim-featured-content {
+      padding: 3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sim-featured-visual {
+      background: var(--black);
+      border-left: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ASCII art terminal preview */
+    .terminal-preview {
+      font-size: 0.6rem;
+      color: var(--green-dim);
+      line-height: 1.6;
+      letter-spacing: 0.05em;
+      text-align: left;
+      opacity: 0.8;
+      animation: termtype 0.5s steps(1) infinite;
+    }
+
+    @keyframes termtype {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 0.6; }
+    }
+
+    .terminal-preview .cursor {
+      display: inline-block;
+      width: 8px; height: 1em;
+      background: var(--green);
+      animation: blink 1s steps(1) infinite;
+      vertical-align: text-bottom;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* ─── STATS STRIP ─── */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--border);
+      margin-top: 4rem;
+    }
+
+    .stat-item {
+      padding: 2rem;
+      border-right: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .stat-item:last-child { border-right: none; }
+
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      letter-spacing: 0.05em;
+      color: var(--green);
+      text-shadow: 0 0 20px rgba(0,255,65,0.3);
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 0.3rem;
+    }
+
+    /* ─── ABOUT ─── */
+    #about {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6rem;
+      align-items: center;
+    }
+
+    .about-terminal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      font-size: 0.68rem;
+      overflow: hidden;
+    }
+
+    .terminal-bar {
+      background: rgba(0,255,65,0.06);
+      border-bottom: 1px solid var(--border);
+      padding: 0.7rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    .t-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+
+    .t-dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+    .terminal-body {
+      padding: 1.5rem;
+      line-height: 2;
+      color: var(--text-muted);
+    }
+
+    .terminal-body .cmd { color: var(--green); }
+    .terminal-body .comment { color: rgba(0,255,65,0.3); }
+    .terminal-body .highlight { color: var(--green); font-weight: 500; }
+
+    .about-text p {
+      font-size: 0.78rem;
+      line-height: 2;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.03em;
+    }
+
+    .about-text p strong { color: var(--green); font-weight: 500; }
+
+        /* ─── FOOTER ─── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--dark);
+    }
+
+    .footer-logo {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--green); }
+
+    .footer-copy {
+      font-size: 0.6rem;
+      color: rgba(0,255,65,0.2);
+      letter-spacing: 0.1em;
+    }
+
+    /* ─── CORNER DECORATION ─── */
+    .corner-tl, .corner-br {
+      position: absolute;
+      width: 20px; height: 20px;
+      border-color: var(--green-dim);
+      border-style: solid;
+      opacity: 0.5;
+    }
+
+    .corner-tl { top: 1.5rem; left: 1.5rem; border-width: 1px 0 0 1px; }
+    .corner-br { bottom: 1.5rem; right: 1.5rem; border-width: 0 1px 1px 0; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { display: none; }
+      #hero { padding: 7rem 1.5rem 6rem; }
+      section { padding: 4rem 1.5rem; }
+      .sim-grid { grid-template-columns: 1fr; }
+      .sim-featured { grid-column: span 1; grid-template-columns: 1fr; }
+      .sim-featured-visual { display: none; }
+      .stats-strip { grid-template-columns: repeat(2, 1fr); }
+      .stat-item { border-bottom: 1px solid var(--border); }
+      #about { grid-template-columns: 1fr; gap: 3rem; }
+      footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+      .footer-links { flex-wrap: wrap; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="nav-logo">NULL<span>PHASOR</span></a>
+    <ul class="nav-links">
+      <li><a href="#simulation">Simulate</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="https://instagram.com/nullphasor" target="_blank">@nullphasor</a></li>
+    </ul>
+    <div class="nav-status">
+      <span class="status-dot"></span>
+      SYS_ONLINE
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-grid"></div>
+
+    <div class="hero-eyebrow">// NullPhasor — Cybersecurity Lab &amp; Simulation Platform</div>
+
+    <h1 class="hero-title">
+      <span class="glitch" data-text="HACK.">HACK.</span><br>
+      DEFEND.<br>
+      <span style="color: var(--text-muted);">REPEAT.</span>
+    </h1>
+
+    <p class="hero-sub">
+      Real attack vectors. Real defense logic.<br>
+      No CTF hand-holding. No theory dumps.<br>
+      Just you vs the system.
+    </p>
+
+    <div class="hero-cta-row">
+      <a href="https://nullphasor.github.io/simulation.html" class="btn-primary">
+        ▶ &nbsp;ENTER SIMULATION
+      </a>
+      <a href="#about" class="btn-ghost">
+        LEARN MORE →
+      </a>
+    </div>
+
+    <div class="corner-tl"></div>
+    <div class="corner-br"></div>
+
+    <!-- TICKER -->
+    <div class="ticker-wrap">
+      <div class="ticker">
+        <span class="accent">[ SIMULATION ACTIVE ]</span>
+        <span>ATTACK &amp; DEFEND</span>
+        <span class="accent">// nullphasor.github.io</span>
+        <span>RECON → EXPLOIT → PIVOT → PERSIST</span>
+        <span class="accent">[ THREAT LEVEL: ELEVATED ]</span>
+        <span>PORT SCAN ██████░░░░ 62%</span>
+        <span class="accent">DNS POISONING: DETECTED</span>
+        <span>BUFFER OVERFLOW MODULE: LOADING...</span>
+        <span class="accent">// ALL VECTORS SIMULATED. NO REAL SYSTEMS HARMED.</span>
+        <span>[ NEW SIMULATION DROPS EVERY FEW DAYS ]</span>
+        <!-- duplicate for seamless loop -->
+        <span class="accent">[ SIMULATION ACTIVE ]</span>
+        <span>ATTACK &amp; DEFEND</span>
+        <span class="accent">// nullphasor.github.io</span>
+        <span>RECON → EXPLOIT → PIVOT → PERSIST</span>
+        <span class="accent">[ THREAT LEVEL: ELEVATED ]</span>
+        <span>PORT SCAN ██████░░░░ 62%</span>
+        <span class="accent">DNS POISONING: DETECTED</span>
+        <span>BUFFER OVERFLOW MODULE: LOADING...</span>
+        <span class="accent">// ALL VECTORS SIMULATED. NO REAL SYSTEMS HARMED.</span>
+        <span>[ NEW SIMULATION DROPS EVERY FEW DAYS ]</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- SIMULATION SECTION -->
+  <section id="simulation">
+    <div class="section-label">// module_01</div>
+    <div class="section-title">SIMULATIONS</div>
+
+    <div class="sim-grid">
+      <a href="https://nullphasor.github.io/simulation.html" class="sim-card">
+        <div class="sim-card-tag">MODE_01 &nbsp;// ATTACKER</div>
+        <div class="sim-card-title">OFFENSIVE OPS</div>
+        <p class="sim-card-desc">
+          Recon. Enumerate. Exploit.<br>
+          Simulate real-world offensive techniques — port scanning,
+          service fingerprinting, vulnerability chaining.
+          No shortcuts. No sandbox training wheels.
+        </p>
+        <span class="sim-card-arrow">↗</span>
+        <div class="corner-tl"></div>
+      </a>
+
+      <a href="https://nullphasor.github.io/simulation.html" class="sim-card">
+        <div class="sim-card-tag">MODE_02 &nbsp;// DEFENDER</div>
+        <div class="sim-card-title">BLUE TEAM</div>
+        <p class="sim-card-desc">
+          Monitor. Detect. Respond.<br>
+          Work the logs, trace the intrusion, patch before the clock
+          hits zero. Defender mode simulates SOC-level decision chains
+          under pressure.
+        </p>
+        <span class="sim-card-arrow">↗</span>
+        <div class="corner-tl"></div>
+      </a>
+
+      <!-- FEATURED CARD -->
+      <div class="sim-featured">
+        <div class="sim-featured-content">
+          <div>
+            <div class="sim-card-tag">FEATURED &nbsp;// FULL SCENARIO</div>
+            <div class="sim-card-title" style="font-size: 2.8rem;">ATTACK &amp; DEFEND</div>
+            <p class="sim-card-desc" style="max-width: 420px; margin-bottom: 2rem;">
+              The full dual-perspective experience. Attack a simulated target,
+              then switch sides and defend against the same vector you just exploited.
+              Understand both ends of the kill chain.
+            </p>
+          </div>
+          <a href="https://nullphasor.github.io/simulation.html" class="btn-primary" style="align-self: flex-start;">
+            ▶ &nbsp;LAUNCH SCENARIO
+          </a>
+        </div>
+        <div class="sim-featured-visual">
+          <div class="terminal-preview">
+<pre>
+nullphasor@host:~$ ./init_scenario
+[*] Loading attack vectors...
+[*] Target: 192.168.1.0/24
+[+] Port 22/tcp — OPEN  (ssh)
+[+] Port 80/tcp — OPEN  (http)
+[+] Port 443/tcp — OPEN (https)
+[!] CVE-2024-3094 detected
+[*] Exploit module: loaded
+[*] Initiating payload delivery...
+[▓▓▓▓▓▓░░░░] 62%
+nullphasor@host:~$ <span class="cursor"></span>
+</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-strip">
+      <div class="stat-item">
+        <span class="stat-num">NEW</span>
+        <span class="stat-label">Simulations Dropping</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">~3</span>
+        <span class="stat-label">Days Between Drops</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">LIVE</span>
+        <span class="stat-label">Always Expanding</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">100%</span>
+        <span class="stat-label">Browser-Based</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div>
+      <div class="section-label">// about_nullphasor</div>
+      <div class="section-title">WHAT IS<br>NULLPHASOR</div>
+      <div class="about-text">
+        <p>
+          <strong>NullPhasor</strong> is a cybersecurity lab, content channel,
+          and simulation platform — built from a phone, for people who learn
+          by breaking things.
+        </p>
+        <p>
+          No fluff. No career-coach motivation. Just <strong>offensive techniques,
+          defensive thinking, and code</strong> that does exactly what
+          it says on the tin.
+        </p>
+        <p>
+          Follow the build at <strong>@nullphasor</strong> on Instagram —
+          raw terminal content, tool breakdowns, and the kind of posts
+          that make your feed feel like a threat feed.
+        </p>
+        <a href="https://instagram.com/nullphasor" target="_blank" class="btn-ghost" style="display:inline-flex; margin-top: 0.5rem;">
+          @NULLPHASOR →
+        </a>
+      </div>
+    </div>
+
+    <div class="about-terminal">
+      <div class="terminal-bar">
+        <div class="t-dot active"></div>
+        <div class="t-dot"></div>
+        <div class="t-dot"></div>
+        <span style="margin-left: 0.5rem;">nullphasor — bash</span>
+      </div>
+      <div class="terminal-body">
+        <div><span class="cmd">$</span> whoami</div>
+        <div><span class="highlight">nullphasor</span></div>
+        <div>&nbsp;</div>
+        <div><span class="cmd">$</span> cat mission.txt</div>
+        <div><span class="comment"># Learn offensive. Think defensive.</span></div>
+        <div><span class="comment"># Build in public. Ship from Termux.</span></div>
+        <div><span class="comment"># No lab. No laptop. No excuses.</span></div>
+        <div>&nbsp;</div>
+        <div><span class="cmd">$</span> ls projects/</div>
+        <div><span class="highlight">vytreus/</span> &nbsp; simulations/ &nbsp; tools/</div>
+        <div>&nbsp;</div>
+        <div><span class="cmd">$</span> ./run simulations/<span class="cursor" style="display:inline-block; width:8px; height:1em; background:var(--green); animation: blink 1s steps(1) infinite; vertical-align:text-bottom;"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">NULLPHASOR</div>
+    <ul class="footer-links">
+      <li><a href="https://nullphasor.github.io/simulation.html">Simulation</a></li>
+      <li><a href="https://instagram.com/nullphasor" target="_blank">Instagram</a></li>
+      <li><a href="https://github.com/nullphasor" target="_blank">GitHub</a></li>
+    </ul>
+    <div class="footer-copy">// ALL SIMULATIONS ARE FICTIONAL. FOR EDUCATIONAL USE.</div>
+  </footer>
+
+</body>
+</html>
+
+    
